@@ -41,7 +41,7 @@ struct FloatyBadge: View {
               let newCorner = nearestCorner(to: droppedPosition, in: bounds)
               
               // Animate to nearest corner with spring
-              withAnimation(.interpolatingSpring(stiffness: 200, damping: 18)) {
+              withAnimation(.interpolatingSpring(stiffness: 200, damping: 30)) {
                 corner = newCorner
                 dragOffset = .zero
                 smoothDragOffset = .zero
@@ -99,12 +99,11 @@ struct RootView: View {
       ZStack {
         ScrollView([.horizontal, .vertical]) {
           GeometryReader { proxy in
-            Color.clear.onChange(of: proxy.frame(in: .named("scroll")).minY) { newValue in
+            Color.clear.onChange(of: proxy.frame(in: .named("scroll")).minY) { _, newValue in
               scrollOffset = newValue
             }
-          }
-          .frame(height: 0)
-          //          .coordinateSpace(name: "scroll")
+          }.frame(height: 0)
+
           Text("""
              GNU LESSER GENERAL PUBLIC LICENSE
                  Version 3, 29 June 2007
