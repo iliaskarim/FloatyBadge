@@ -3,59 +3,50 @@ import SwiftUI
 struct FloatyBadge: View {
   private let badgeSize = CGSize(width: 50, height: 50)
   private let margin: CGFloat = 12
-
+  
   var scrollOffset: CGFloat = 0
-
-  @State private var position: CGPoint = .zero
-  @State private var lastBounds: CGRect = .zero
+  @State private var corner: Corner = .topRight
   @State private var dragOffset: CGSize = .zero
-  @State private var dragStartPosition: CGPoint? = nil
-
+  
+  enum Corner {
+    case topLeft, topRight, bottomLeft, bottomRight
+  }
+  
   var body: some View {
     GeometryReader { geo in
       let bounds = safeBounds(in: geo.size)
-
+      let basePosition = position(for: corner, in: bounds)
+      let currentPosition = CGPoint(
+        x: basePosition.x + dragOffset.width,
+        y: basePosition.y + dragOffset.height
+      )
+      
       badgeView
-        .position(position)
+        .position(currentPosition)
         .gesture(
           DragGesture()
             .onChanged { value in
-              if dragStartPosition == nil {
-                dragStartPosition = position
-              }
-              let newX = dragStartPosition!.x + value.translation.width
-              let newY = dragStartPosition!.y + value.translation.height
-              position.x = min(max(newX, bounds.minX), bounds.maxX)
-              position.y = min(max(newY, bounds.minY), bounds.maxY)
+              dragOffset = value.translation
             }
-            .onEnded { _ in
-              dragStartPosition = nil
+            .onEnded { value in
+              let droppedPosition = CGPoint(
+                x: basePosition.x + value.translation.width,
+                y: basePosition.y + value.translation.height
+              )
+              corner = nearestCorner(to: droppedPosition, in: bounds)
+              dragOffset = .zero
             }
         )
-        .onChange(of: bounds) { newBounds in
-          if newBounds != lastBounds {
-            position.x = min(max(position.x, newBounds.minX), newBounds.maxX)
-            position.y = min(max(position.y, newBounds.minY), newBounds.maxY)
-            lastBounds = newBounds
-          }
-        }
-        .onAppear {
-          lastBounds = bounds
-          position = CGPoint(
-            x: (bounds.minX + bounds.maxX) / 2,
-            y: (bounds.minY + bounds.maxY) / 2
-          )
-        }
     }
   }
-
+  
   private var badgeView: some View {
     Image(systemName: "line.3.horizontal.circle")
       .frame(width: badgeSize.width, height: badgeSize.height)
       .background(.ultraThinMaterial, in: Capsule())
       .shadow(radius: 1)
   }
-
+  
   private func safeBounds(in size: CGSize) -> CGRect {
     let minX = margin + badgeSize.width / 2
     let maxX = size.width - margin - badgeSize.width / 2
@@ -63,6 +54,30 @@ struct FloatyBadge: View {
     let minY = margin + badgeSize.height / 2 + bounceOffset
     let maxY = size.height - margin - badgeSize.height / 2
     return CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+  }
+  
+  private func position(for corner: Corner, in bounds: CGRect) -> CGPoint {
+    switch corner {
+    case .topLeft: return CGPoint(x: bounds.minX, y: bounds.minY)
+    case .topRight: return CGPoint(x: bounds.maxX, y: bounds.minY)
+    case .bottomLeft: return CGPoint(x: bounds.minX, y: bounds.maxY)
+    case .bottomRight: return CGPoint(x: bounds.maxX, y: bounds.maxY)
+    }
+  }
+  
+  private func nearestCorner(to point: CGPoint, in bounds: CGRect) -> Corner {
+    let corners: [Corner: CGPoint] = [
+      .topLeft: CGPoint(x: bounds.minX, y: bounds.minY),
+      .topRight: CGPoint(x: bounds.maxX, y: bounds.minY),
+      .bottomLeft: CGPoint(x: bounds.minX, y: bounds.maxY),
+      .bottomRight: CGPoint(x: bounds.maxX, y: bounds.maxY)
+    ]
+    return corners.min(by: { dist($0.value, point) < dist($1.value, point) })?.key ?? .topRight
+  }
+  
+  private func dist(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
+    let dx = a.x - b.x, dy = a.y - b.y
+    return sqrt(dx*dx + dy*dy)
   }
 }
 
@@ -73,13 +88,12 @@ struct RootView: View {
       ZStack {
         ScrollView([.horizontal, .vertical]) {
           GeometryReader { proxy in
-            Color.clear
-              .onChange(of: proxy.frame(in: .named("scroll")).minY) { newValue in
-                scrollOffset = newValue
-              }
+            Color.clear.onChange(of: proxy.frame(in: .named("scroll")).minY) { newValue in
+              scrollOffset = newValue
+            }
           }
           .frame(height: 0)
-
+          //          .coordinateSpace(name: "scroll")
           Text("""
              GNU LESSER GENERAL PUBLIC LICENSE
                  Version 3, 29 June 2007
@@ -122,15 +136,15 @@ object code and/or source code for the Application, including any data
 and utility programs needed for reproducing the Combined Work from the
 Application, but excluding the System Libraries of the Combined Work.
 """).monospaced().padding()
-
+          
         }
         .coordinateSpace(name: "scroll")
-
+        
         FloatyBadge(scrollOffset: scrollOffset)
       }.navigationTitle("COPYING")
     }
   }
-
+  
   @State private var scrollOffset: CGFloat = 0
 }
 
