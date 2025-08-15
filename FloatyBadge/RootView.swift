@@ -8,6 +8,8 @@ struct FloatyBadge: View {
 
   @State private var position: CGPoint = .zero
   @State private var lastBounds: CGRect = .zero
+  @State private var dragOffset: CGSize = .zero
+  @State private var dragStartPosition: CGPoint? = nil
 
   var body: some View {
     GeometryReader { geo in
@@ -18,10 +20,16 @@ struct FloatyBadge: View {
         .gesture(
           DragGesture()
             .onChanged { value in
-              let newX = position.x + value.translation.width
-              let newY = position.y + value.translation.height
+              if dragStartPosition == nil {
+                dragStartPosition = position
+              }
+              let newX = dragStartPosition!.x + value.translation.width
+              let newY = dragStartPosition!.y + value.translation.height
               position.x = min(max(newX, bounds.minX), bounds.maxX)
               position.y = min(max(newY, bounds.minY), bounds.maxY)
+            }
+            .onEnded { _ in
+              dragStartPosition = nil
             }
         )
         .onChange(of: bounds) { newBounds in
