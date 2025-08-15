@@ -3,30 +3,35 @@ import SwiftUI
 struct FloatyBadge: View {
   private let badgeSize = CGSize(width: 50, height: 50)
   private let margin: CGFloat = 12
-
+  
   var scrollOffset: CGFloat = 0
   @State private var corner: Corner = .topRight
   @State private var dragOffset: CGSize = .zero
-
+  @State private var smoothDragOffset: CGSize = .zero
+  
   enum Corner {
     case topLeft, topRight, bottomLeft, bottomRight
   }
-
+  
   var body: some View {
     GeometryReader { geo in
       let bounds = safeBounds(in: geo.size)
       let basePosition = position(for: corner, in: bounds)
       let currentPosition = CGPoint(
-        x: basePosition.x + dragOffset.width,
-        y: basePosition.y + dragOffset.height
+        x: basePosition.x + smoothDragOffset.width,
+        y: basePosition.y + smoothDragOffset.height
       )
-
+      
       badgeView
         .position(currentPosition)
         .gesture(
           DragGesture()
             .onChanged { value in
               dragOffset = value.translation
+              // Smoothly follow the drag with a short animation
+              withAnimation(.easeOut(duration: 0.08)) {
+                smoothDragOffset = dragOffset
+              }
             }
             .onEnded { value in
               let droppedPosition = CGPoint(
@@ -34,24 +39,25 @@ struct FloatyBadge: View {
                 y: basePosition.y + value.translation.height
               )
               let newCorner = nearestCorner(to: droppedPosition, in: bounds)
-
-              // Animate the snap with a spring for inertia-like effect
+              
+              // Animate to nearest corner with spring
               withAnimation(.interpolatingSpring(stiffness: 200, damping: 18)) {
                 corner = newCorner
                 dragOffset = .zero
+                smoothDragOffset = .zero
               }
             }
         )
     }
   }
-
+  
   private var badgeView: some View {
     Image(systemName: "line.3.horizontal.circle")
       .frame(width: badgeSize.width, height: badgeSize.height)
       .background(.ultraThinMaterial, in: Capsule())
       .shadow(radius: 1)
   }
-
+  
   private func safeBounds(in size: CGSize) -> CGRect {
     let minX = margin + badgeSize.width / 2
     let maxX = size.width - margin - badgeSize.width / 2
@@ -60,7 +66,7 @@ struct FloatyBadge: View {
     let maxY = size.height - margin - badgeSize.height / 2
     return CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
   }
-
+  
   private func position(for corner: Corner, in bounds: CGRect) -> CGPoint {
     switch corner {
     case .topLeft: return CGPoint(x: bounds.minX, y: bounds.minY)
@@ -69,7 +75,7 @@ struct FloatyBadge: View {
     case .bottomRight: return CGPoint(x: bounds.maxX, y: bounds.maxY)
     }
   }
-
+  
   private func nearestCorner(to point: CGPoint, in bounds: CGRect) -> Corner {
     let corners: [Corner: CGPoint] = [
       .topLeft: CGPoint(x: bounds.minX, y: bounds.minY),
@@ -79,7 +85,7 @@ struct FloatyBadge: View {
     ]
     return corners.min(by: { dist($0.value, point) < dist($1.value, point) })?.key ?? .topRight
   }
-
+  
   private func dist(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
     let dx = a.x - b.x, dy = a.y - b.y
     return sqrt(dx*dx + dy*dy)
@@ -141,15 +147,15 @@ object code and/or source code for the Application, including any data
 and utility programs needed for reproducing the Combined Work from the
 Application, but excluding the System Libraries of the Combined Work.
 """).monospaced().padding()
-
+          
         }
         .coordinateSpace(name: "scroll")
-
+        
         FloatyBadge(scrollOffset: scrollOffset)
       }.navigationTitle("COPYING")
     }
   }
-
+  
   @State private var scrollOffset: CGFloat = 0
 }
 
