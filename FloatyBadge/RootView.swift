@@ -1,37 +1,45 @@
 import SwiftUI
 
 struct FloatyBadge: View {
-  // tune these
   private let badgeSize = CGSize(width: 50, height: 50)
   private let margin: CGFloat = 12
 
-  @State private var position: CGPoint? // nil = not placed yet
+  var scrollOffset: CGFloat = 0
+
+  @State private var position: CGPoint = .zero
+  @State private var lastBounds: CGRect = .zero
 
   var body: some View {
     GeometryReader { geo in
       let bounds = safeBounds(in: geo.size)
 
       badgeView
-        .position(initialPosition(in: bounds))
+        .position(position)
         .gesture(
           DragGesture()
             .onChanged { value in
-              // clamp live to local content bounds
-              position = clamp(value.location, to: bounds)
-            }
-            .onEnded { value in
-              // add a touch of inertia using predicted end, then snap to nearest corner
-              let predicted = clamp(value.predictedEndLocation, to: bounds)
-              let target = nearestCorner(to: predicted, in: bounds)
-              withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                position = target
-              }
+              let newX = position.x + value.translation.width
+              let newY = position.y + value.translation.height
+              position.x = min(max(newX, bounds.minX), bounds.maxX)
+              position.y = min(max(newY, bounds.minY), bounds.maxY)
             }
         )
+        .onChange(of: bounds) { newBounds in
+          if newBounds != lastBounds {
+            position.x = min(max(position.x, newBounds.minX), newBounds.maxX)
+            position.y = min(max(position.y, newBounds.minY), newBounds.maxY)
+            lastBounds = newBounds
+          }
+        }
+        .onAppear {
+          lastBounds = bounds
+          position = CGPoint(
+            x: (bounds.minX + bounds.maxX) / 2,
+            y: (bounds.minY + bounds.maxY) / 2
+          )
+        }
     }
   }
-
-  // MARK: - Views
 
   private var badgeView: some View {
     Image(systemName: "line.3.horizontal.circle")
@@ -40,45 +48,13 @@ struct FloatyBadge: View {
       .shadow(radius: 1)
   }
 
-  // MARK: - Layout helpers
-
   private func safeBounds(in size: CGSize) -> CGRect {
-    // local content rect with margins and badge size accounted for
-    let minX = margin + badgeSize.width  / 2
-    let maxX = size.width  - margin - badgeSize.width  / 2
-    let minY = margin + badgeSize.height / 2
+    let minX = margin + badgeSize.width / 2
+    let maxX = size.width - margin - badgeSize.width / 2
+    let bounceOffset = scrollOffset > 0 ? scrollOffset : 0
+    let minY = margin + badgeSize.height / 2 + bounceOffset
     let maxY = size.height - margin - badgeSize.height / 2
     return CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
-  }
-
-  private func initialPosition(in bounds: CGRect) -> CGPoint {
-    if let position { return position }
-    // default start: top-left, nudged down a bit
-    let start = CGPoint(x: bounds.minX, y: bounds.minY + 100)
-    position = start
-    return start
-  }
-
-  private func clamp(_ p: CGPoint, to rect: CGRect) -> CGPoint {
-    CGPoint(
-      x: min(max(p.x, rect.minX), rect.maxX),
-      y: min(max(p.y, rect.minY), rect.maxY)
-    )
-  }
-
-  private func nearestCorner(to p: CGPoint, in rect: CGRect) -> CGPoint {
-    let corners = [
-      CGPoint(x: rect.minX, y: rect.minY),
-      CGPoint(x: rect.maxX, y: rect.minY),
-      CGPoint(x: rect.minX, y: rect.maxY),
-      CGPoint(x: rect.maxX, y: rect.maxY)
-    ]
-    return corners.min(by: { dist($0, p) < dist($1, p) }) ?? p
-  }
-
-  private func dist(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
-    let dx = a.x - b.x, dy = a.y - b.y
-    return sqrt(dx*dx + dy*dy)
   }
 }
 
@@ -88,6 +64,14 @@ struct RootView: View {
     NavigationStack {
       ZStack {
         ScrollView([.horizontal, .vertical]) {
+          GeometryReader { proxy in
+            Color.clear
+              .onChange(of: proxy.frame(in: .named("scroll")).minY) { newValue in
+                scrollOffset = newValue
+              }
+          }
+          .frame(height: 0)
+
           Text("""
              GNU LESSER GENERAL PUBLIC LICENSE
                  Version 3, 29 June 2007
@@ -132,11 +116,14 @@ Application, but excluding the System Libraries of the Combined Work.
 """).monospaced().padding()
 
         }
+        .coordinateSpace(name: "scroll")
 
-        FloatyBadge()
+        FloatyBadge(scrollOffset: scrollOffset)
       }.navigationTitle("COPYING")
     }
   }
+
+  @State private var scrollOffset: CGFloat = 0
 }
 
 #Preview {
