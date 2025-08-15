@@ -1,95 +1,136 @@
 import SwiftUI
+private struct PillWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
 
 struct FloatyBadge: View {
-  private let badgeSize = CGSize(width: 50, height: 50)
-  private let margin: CGFloat = 12
-  
-  var scrollOffset: CGFloat = 0
-  @State private var corner: Corner = .topRight
-  @State private var dragOffset: CGSize = .zero
-  @State private var smoothDragOffset: CGSize = .zero
-  
-  enum Corner {
-    case topLeft, topRight, bottomLeft, bottomRight
-  }
-  
-  var body: some View {
-    GeometryReader { geo in
-      let bounds = safeBounds(in: geo.size)
-      let basePosition = position(for: corner, in: bounds)
-      let currentPosition = CGPoint(
-        x: basePosition.x + smoothDragOffset.width,
-        y: basePosition.y + smoothDragOffset.height
-      )
-      
-      badgeView
-        .position(currentPosition)
-        .gesture(
-          DragGesture()
-            .onChanged { value in
-              dragOffset = value.translation
-              // Smoothly follow the drag with a short animation
-              withAnimation(.easeOut(duration: 0.08)) {
-                smoothDragOffset = dragOffset
+    private let badgeSize = 50.0
+    private let imageSize = 30.0
+    var branchName: String = "mainmainmainmainmainmainmainmain"
+
+    @State private var pillWidth: CGFloat = 0
+    @State private var corner: Corner = .topRight
+    @State private var dragOffset: CGSize = .zero
+    @State private var smoothDragOffset: CGSize = .zero
+
+    enum Corner {
+        case topLeft, topRight, bottomLeft, bottomRight
+        var isLeft: Bool {
+            switch self { case .topLeft, .bottomLeft: return true; default: return false }
+        }
+    }
+
+    private let spacing = 8.0
+    private var padding: CGFloat { (badgeSize - imageSize) / 2 }
+    private let margin: CGFloat = 12
+    private var pillHeightOffset: CGFloat { badgeSize / 2 }
+
+    var body: some View {
+        GeometryReader { geo in
+            let bounds = safeBounds(in: geo.size)
+            let baseX = xPosition(for: corner, in: bounds)
+            let baseY = yPosition(for: corner, in: bounds)
+            let currentX = baseX + smoothDragOffset.width
+            let currentY = baseY + smoothDragOffset.height
+
+          Rectangle()
+            .stroke(Color.red, lineWidth: 3)
+            .frame(width: bounds.width, height: bounds.height)
+            .position(x: bounds.midX, y: bounds.midY)
+
+            HStack(spacing: spacing) {
+                Image(systemName: "line.3.horizontal.circle")
+                    .resizable()
+                    .frame(width: imageSize, height: imageSize)
+                    .padding([.leading, .vertical], padding)
+
+                Text(branchName)
+                    .lineLimit(1)
+                    .padding(.trailing, padding)
+                    .frame(maxWidth: bounds.width * 0.4)
+                    .fixedSize()
+            }
+            .background(.ultraThinMaterial, in: Capsule())
+            .shadow(radius: 1)
+            .background(
+                GeometryReader { pillGeo in
+                    Color.clear
+                        .preference(key: PillWidthKey.self, value: pillGeo.size.width)
+                }
+            )
+            .frame(height: badgeSize)
+            .offset(
+                x: currentX - (corner.isLeft ? pillHeightOffset : pillWidth - pillHeightOffset),
+                y: currentY - badgeSize / 2
+            )
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        dragOffset = value.translation
+                        withAnimation(.easeOut(duration: 0.08)) {
+                            smoothDragOffset = dragOffset
+                        }
+                    }
+                    .onEnded { value in
+                        let droppedPoint = CGPoint(
+                            x: baseX + value.translation.width,
+                            y: baseY + value.translation.height
+                        )
+                        let newCorner = nearestCorner(to: droppedPoint, in: bounds)
+                        withAnimation(.interpolatingSpring(stiffness: 200, damping: 30)) {
+                            corner = newCorner
+                            dragOffset = .zero
+                            smoothDragOffset = .zero
+                        }
+                    }
+            )
+            .onPreferenceChange(PillWidthKey.self) { width in
+              Task { @MainActor in
+                pillWidth = width
               }
             }
-            .onEnded { value in
-              let droppedPosition = CGPoint(
-                x: basePosition.x + value.translation.width,
-                y: basePosition.y + value.translation.height
-              )
-              let newCorner = nearestCorner(to: droppedPosition, in: bounds)
-              
-              // Animate to nearest corner with spring
-              withAnimation(.interpolatingSpring(stiffness: 200, damping: 30)) {
-                corner = newCorner
-                dragOffset = .zero
-                smoothDragOffset = .zero
-              }
-            }
-        )
+        }
     }
-  }
-  
-  private var badgeView: some View {
-    Image(systemName: "line.3.horizontal.circle")
-      .frame(width: badgeSize.width, height: badgeSize.height)
-      .background(.ultraThinMaterial, in: Capsule())
-      .shadow(radius: 1)
-  }
-  
-  private func safeBounds(in size: CGSize) -> CGRect {
-    let minX = margin + badgeSize.width / 2
-    let maxX = size.width - margin - badgeSize.width / 2
-    let bounceOffset = scrollOffset > 0 ? scrollOffset : 0
-    let minY = margin + badgeSize.height / 2 + bounceOffset
-    let maxY = size.height - margin - badgeSize.height / 2
-    return CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
-  }
-  
-  private func position(for corner: Corner, in bounds: CGRect) -> CGPoint {
-    switch corner {
-    case .topLeft: return CGPoint(x: bounds.minX, y: bounds.minY)
-    case .topRight: return CGPoint(x: bounds.maxX, y: bounds.minY)
-    case .bottomLeft: return CGPoint(x: bounds.minX, y: bounds.maxY)
-    case .bottomRight: return CGPoint(x: bounds.maxX, y: bounds.maxY)
+
+    private func safeBounds(in size: CGSize) -> CGRect {
+        let minX = margin + badgeSize / 2
+        let maxX = size.width - margin - badgeSize / 2
+        let minY = margin + badgeSize / 2
+        let maxY = size.height - margin - badgeSize / 2
+        return CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
     }
-  }
-  
-  private func nearestCorner(to point: CGPoint, in bounds: CGRect) -> Corner {
-    let corners: [Corner: CGPoint] = [
-      .topLeft: CGPoint(x: bounds.minX, y: bounds.minY),
-      .topRight: CGPoint(x: bounds.maxX, y: bounds.minY),
-      .bottomLeft: CGPoint(x: bounds.minX, y: bounds.maxY),
-      .bottomRight: CGPoint(x: bounds.maxX, y: bounds.maxY)
-    ]
-    return corners.min(by: { dist($0.value, point) < dist($1.value, point) })?.key ?? .topRight
-  }
-  
-  private func dist(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
-    let dx = a.x - b.x, dy = a.y - b.y
-    return sqrt(dx*dx + dy*dy)
-  }
+
+    private func xPosition(for corner: Corner, in bounds: CGRect) -> CGFloat {
+        switch corner {
+        case .topLeft, .bottomLeft: return bounds.minX
+        case .topRight, .bottomRight: return bounds.maxX
+        }
+    }
+
+    private func yPosition(for corner: Corner, in bounds: CGRect) -> CGFloat {
+        switch corner {
+        case .topLeft, .topRight: return bounds.minY
+        case .bottomLeft, .bottomRight: return bounds.maxY
+        }
+    }
+
+    private func nearestCorner(to point: CGPoint, in bounds: CGRect) -> Corner {
+        let corners: [Corner: CGPoint] = [
+            .topLeft: CGPoint(x: bounds.minX, y: bounds.minY),
+            .topRight: CGPoint(x: bounds.maxX, y: bounds.minY),
+            .bottomLeft: CGPoint(x: bounds.minX, y: bounds.maxY),
+            .bottomRight: CGPoint(x: bounds.maxX, y: bounds.maxY)
+        ]
+        return corners.min(by: { dist($0.value, point) < dist($1.value, point) })?.key ?? .topRight
+    }
+
+    private func dist(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
+        let dx = a.x - b.x, dy = a.y - b.y
+        return sqrt(dx*dx + dy*dy)
+    }
 }
 
 /// FloatyBadge root view
@@ -146,15 +187,15 @@ object code and/or source code for the Application, including any data
 and utility programs needed for reproducing the Combined Work from the
 Application, but excluding the System Libraries of the Combined Work.
 """).monospaced().padding()
-          
+
         }
         .coordinateSpace(name: "scroll")
-        
-        FloatyBadge(scrollOffset: scrollOffset)
+
+        FloatyBadge()
       }.navigationTitle("COPYING")
     }
   }
-  
+
   @State private var scrollOffset: CGFloat = 0
 }
 
