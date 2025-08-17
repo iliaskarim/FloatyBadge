@@ -7,12 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7D09E86A2E51C30700A2E233 /* FloatyBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D09E8682E51C2B900A2E233 /* FloatyBadge.swift */; };
 		7DC576FB2E4DA8850028A965 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC576FA2E4DA8850028A965 /* App.swift */; };
 		7DC576FD2E4DA8850028A965 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC576FC2E4DA8850028A965 /* RootView.swift */; };
 		7DC576FF2E4DA8870028A965 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7DC576FE2E4DA8870028A965 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		7D09E8682E51C2B900A2E233 /* FloatyBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatyBadge.swift; sourceTree = "<group>"; };
 		7DC576F72E4DA8850028A965 /* FloatyBadge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FloatyBadge.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7DC576FA2E4DA8850028A965 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
 		7DC576FC2E4DA8850028A965 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -51,6 +53,7 @@
 			children = (
 				7DC576FA2E4DA8850028A965 /* App.swift */,
 				7DC576FC2E4DA8850028A965 /* RootView.swift */,
+				7D09E8682E51C2B900A2E233 /* FloatyBadge.swift */,
 				7DC576FE2E4DA8870028A965 /* Assets.xcassets */,
 			);
 			path = FloatyBadge;
@@ -128,6 +131,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7D09E86A2E51C30700A2E233 /* FloatyBadge.swift in Sources */,
 				7DC576FD2E4DA8850028A965 /* RootView.swift in Sources */,
 				7DC576FB2E4DA8850028A965 /* App.swift in Sources */,
 			);

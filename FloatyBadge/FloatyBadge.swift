@@ -1,0 +1,132 @@
+import SwiftUI
+
+struct FloatyBadge: View {
+  private enum Corner: CaseIterable {
+    static func nearest(to point: CGPoint, in bounds: CGRect) -> Corner {
+      allCases.min { lhs, rhs in
+        dist(lhs.point(in: bounds), point) < dist(rhs.point(in: bounds), point)
+      } ?? .topRight
+    }
+
+    private static func dist(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
+      let dx = a.x - b.x, dy = a.y - b.y
+      return sqrt(dx * dx + dy * dy)
+    }
+
+    case topLeft, topRight, bottomLeft, bottomRight
+
+    var isLeft: Bool {
+      self == .topLeft || self == .bottomLeft
+    }
+
+    func point(in bounds: CGRect) -> CGPoint {
+      switch self {
+      case .topLeft:
+        .init(x: bounds.minX, y: bounds.minY)
+
+      case .topRight:
+        .init(x: bounds.maxX, y: bounds.minY)
+
+      case .bottomLeft:
+        .init(x: bounds.minX, y: bounds.maxY)
+
+      case .bottomRight:
+        .init(x: bounds.maxX, y: bounds.maxY)
+      }
+    }
+  }
+
+  private struct PillWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+      value = max(value, nextValue())
+    }
+  }
+
+  var body: some View {
+    GeometryReader { proxy in
+      let margin: CGFloat = 12
+      let bounds = CGRect(
+          x: margin + badgeSize / 2,
+          y: margin + badgeSize / 2,
+          width: proxy.size.width - 2 * margin - badgeSize,
+          height: proxy.size.height - 2 * margin - badgeSize
+      )
+
+      let base = corner.point(in: bounds)
+
+      let imageSize = 30.0
+
+      HStack {
+        image
+          .resizable()
+          .frame(width: imageSize, height: imageSize)
+          .padding([.leading, .vertical], (badgeSize - imageSize) / 2)
+
+        Text(name)
+          .frame(maxWidth: bounds.width * 0.4)
+          .lineLimit(1)
+          .monospaced()
+          .padding(.trailing, (badgeSize - imageSize) / 2 + 5)
+          .fixedSize()
+      }
+      .background(.ultraThinMaterial, in: Capsule())
+      .shadow(radius: 1)
+      .background(
+        GeometryReader { proxy in
+          Color.clear.preference(key: PillWidthKey.self, value: proxy.size.width)
+        }
+      )
+      .frame(height: badgeSize)
+      .offset(
+        x: base.x + smoothDragOffset.width - (corner.isLeft ? badgeSize / 2 : pillWidth - badgeSize / 2),
+        y: base.y + smoothDragOffset.height - badgeSize / 2
+      )
+      .gesture(
+        DragGesture()
+          .onChanged { value in
+            dragOffset = value.translation
+            withAnimation(.easeOut(duration: 0.08)) {
+              smoothDragOffset = dragOffset
+            }
+          }
+          .onEnded { value in
+            withAnimation(.interpolatingSpring(stiffness: 200, damping: 30)) {
+              let droppedPoint = CGPoint(
+                x: base.x + value.translation.width,
+                y: base.y + value.translation.height
+              )
+              corner = Corner.nearest(to: droppedPoint, in: bounds)
+              dragOffset = .zero
+              smoothDragOffset = .zero
+            }
+          }
+      )
+      .onPreferenceChange(PillWidthKey.self) { width in
+        Task { @MainActor in
+          pillWidth = width
+        }
+      }
+    }
+  }
+
+  private let badgeSize = 50.0
+
+  @State private var corner: Corner = .topRight
+
+  @State private var dragOffset: CGSize = .zero
+
+  private let image: Image
+
+  private let name: String
+
+  @State private var pillWidth: CGFloat = 0
+
+  @State private var smoothDragOffset: CGSize = .zero
+
+  init(name: String, image: Image) {
+    self.name = name
+    self.image = image
+  }
+}
