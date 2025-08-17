@@ -19,7 +19,7 @@ struct FloatyBadge: View {
       self == .topLeft || self == .bottomLeft
     }
 
-    private func point(in bounds: CGRect) -> CGPoint {
+    func point(in bounds: CGRect) -> CGPoint {
       switch self {
       case .topLeft:
         .init(x: bounds.minX, y: bounds.minY)
@@ -47,30 +47,14 @@ struct FloatyBadge: View {
   var body: some View {
     GeometryReader { proxy in
       let margin: CGFloat = 12
-      let minX = margin + badgeSize / 2
-      let maxX = proxy.size.width - margin - badgeSize / 2
-      let minY = margin + badgeSize / 2
-      let maxY = proxy.size.height - margin - badgeSize / 2
-      let bounds = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+      let bounds = CGRect(
+          x: margin + badgeSize / 2,
+          y: margin + badgeSize / 2,
+          width: proxy.size.width - 2 * margin - badgeSize,
+          height: proxy.size.height - 2 * margin - badgeSize
+      )
 
-      let baseX = switch corner {
-      case .topLeft, .bottomLeft:
-        bounds.minX
-
-      case .topRight, .bottomRight:
-        bounds.maxX
-      }
-
-      let baseY = switch corner {
-      case .topLeft, .topRight:
-        bounds.minY
-
-      case .bottomLeft, .bottomRight:
-        bounds.maxY
-      }
-
-      let currentX = baseX + smoothDragOffset.width
-      let currentY = baseY + smoothDragOffset.height
+      let base = corner.point(in: bounds)
 
       let imageSize = 30.0
       let padding = (badgeSize - imageSize) / 2
@@ -97,8 +81,8 @@ struct FloatyBadge: View {
       )
       .frame(height: badgeSize)
       .offset(
-        x: currentX - (corner.isLeft ? pillHeightOffset : pillWidth - pillHeightOffset),
-        y: currentY - badgeSize / 2
+        x: base.x + smoothDragOffset.width - (corner.isLeft ? pillHeightOffset : pillWidth - pillHeightOffset),
+        y: base.y + smoothDragOffset.height - badgeSize / 2
       )
       .gesture(
         DragGesture()
@@ -111,8 +95,8 @@ struct FloatyBadge: View {
           .onEnded { value in
             withAnimation(.interpolatingSpring(stiffness: 200, damping: 30)) {
               let droppedPoint = CGPoint(
-                x: baseX + value.translation.width,
-                y: baseY + value.translation.height
+                x: base.x + value.translation.width,
+                y: base.y + value.translation.height
               )
               corner = Corner.nearest(to: droppedPoint, in: bounds)
               dragOffset = .zero
@@ -202,8 +186,6 @@ struct RootView: View {
       }.navigationTitle("COPYING")
     }
   }
-
-  @State private var scrollOffset: CGFloat = 0
 }
 
 #Preview {
