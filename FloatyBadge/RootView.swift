@@ -57,19 +57,18 @@ struct FloatyBadge: View {
       let base = corner.point(in: bounds)
 
       let imageSize = 30.0
-      let padding = (badgeSize - imageSize) / 2
-      let pillHeightOffset = badgeSize / 2
 
       HStack {
         image
           .resizable()
           .frame(width: imageSize, height: imageSize)
-          .padding([.leading, .vertical], padding)
+          .padding([.leading, .vertical], (badgeSize - imageSize) / 2)
 
         Text(name)
-          .lineLimit(1)
-          .padding(.trailing, padding)
           .frame(maxWidth: bounds.width * 0.4)
+          .lineLimit(1)
+          .monospaced()
+          .padding(.trailing, (badgeSize - imageSize) / 2 + 5)
           .fixedSize()
       }
       .background(.ultraThinMaterial, in: Capsule())
@@ -81,7 +80,7 @@ struct FloatyBadge: View {
       )
       .frame(height: badgeSize)
       .offset(
-        x: base.x + smoothDragOffset.width - (corner.isLeft ? pillHeightOffset : pillWidth - pillHeightOffset),
+        x: base.x + smoothDragOffset.width - (corner.isLeft ? badgeSize / 2 : pillWidth - badgeSize / 2),
         y: base.y + smoothDragOffset.height - badgeSize / 2
       )
       .gesture(
@@ -182,12 +181,33 @@ struct RootView: View {
           """).monospaced().padding()
         }
 
-        FloatyBadge(name: "main", image: Image(systemName: "line.3.horizontal.circle"))
+        FloatyBadge(name: name, image: image)
       }.navigationTitle("COPYING")
     }
+  }
+
+  private let image: Image
+
+  private let name: String
+
+  init(name: String, image: Image) {
+    self.name = name
+    self.image = image
+  }
+
+  init() {
+    self.init(name: "main", image: .init(systemName: "line.3.horizontal.decrease.circle.fill"))
   }
 }
 
 #Preview {
-  RootView()
+  RootView(name: "main", image: .init(systemName: "line.3.horizontal.decrease.circle.fill"))
+}
+
+#Preview {
+  RootView(name: "mainmainmainmainmainmain", image: .init(systemName: "line.3.horizontal.decrease.circle.fill"))
+}
+
+#Preview {
+  RootView(name: "1.1.1", image: .init(systemName: "tag.circle.fill"))
 }
