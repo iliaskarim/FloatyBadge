@@ -1,0 +1,65 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Format all files",
+      "type": "shell",
+      "command": "/opt/homebrew/bin/swiftformat -v . 2>&1 | sed $'s/\\x1b\\[[0-9;]*m//g'",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": false,
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "Lint all files",
+      "type": "shell",
+      "command": "/opt/homebrew/bin/swiftlint .",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": false,
+        "showReuseMessage": false,
+      }
+    },
+    {
+      "label": "Format and lint all files",
+      "problemMatcher": [],
+      "dependsOn": [
+        "Format all files",
+        "Lint all files"
+      ],
+      "dependsOrder": "sequence"
+    },
+    {
+      "label": "Format current file",
+      "type": "shell",
+      "command": "/opt/homebrew/bin/swiftformat -v ${file} 2>&1 | sed $'s/\\x1b\\[[0-9;]*m//g'",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": false,
+        "showReuseMessage": false,
+        "clear": true
+      }
+    },
+    {
+      "label": "Lint current file",
+      "type": "shell",
+      "command": "/opt/homebrew/bin/swiftlint ${file}",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": false,
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "Format and lint current file",
+      "problemMatcher": [],
+      "dependsOn": [
+        "Format current file",
+        "Lint current file"
+      ],
+      "dependsOrder": "sequence"
+    }
+  ]
+}
