@@ -90,6 +90,10 @@ struct FloatyBadge: View {
         Capsule()
           .fill(.ultraThinMaterial)
           .shadow(radius: 1)
+          .overlay(
+            Capsule()
+              .strokeBorder(Color.primary.opacity(0.25), lineWidth: 0.5)
+          )
       )
       .background(
         GeometryReader { proxy in
