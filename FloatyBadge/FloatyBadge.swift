@@ -137,7 +137,7 @@ struct FloatyBadge: View {
 
   private let badgeSize = 50.0
 
-  @State private var corner: Corner = .topRight
+  @State private var corner: Corner = .bottomRight
 
   @State private var dragOffset: CGSize = .zero
 
