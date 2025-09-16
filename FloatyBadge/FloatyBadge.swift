@@ -76,7 +76,7 @@ struct FloatyBadge: View {
         image
           .resizable()
           .frame(width: imageSize, height: imageSize)
-          .padding([.leading, .vertical], (badgeSize - imageSize) / 2)
+          .padding(.leading, (badgeSize - imageSize) / 2)
 
         Text(name)
           .frame(maxWidth: bounds.width * 0.4)
@@ -85,8 +85,12 @@ struct FloatyBadge: View {
           .padding(.trailing, (badgeSize - imageSize) / 2)
           .fixedSize()
       }
-      .background(.ultraThinMaterial, in: Capsule())
-      .shadow(radius: 1)
+      .padding(.vertical, 11)
+      .background(
+        Capsule()
+          .fill(.ultraThinMaterial)
+          .shadow(radius: 1)
+      )
       .background(
         GeometryReader { proxy in
           Color.clear.preference(key: PillWidthKey.self, value: proxy.size.width)
