@@ -50,33 +50,33 @@ struct RootView: View {
           """).monospaced().padding()
         }
 
-        FloatyBadge(name: name, image: image)
+        FloatyBadge(name: name, badge: badge)
       }.navigationTitle("COPYING")
     }
   }
 
-  private let image: Image
+  private let badge: FloatyBadge.Badge
 
   private let name: String
 
-  init(name: String, image: Image) {
+  init(name: String, badge: FloatyBadge.Badge) {
     self.name = name
-    self.image = image
+    self.badge = badge
   }
 
   init() {
-    self.init(name: "main", image: .init(systemName: "line.3.horizontal.decrease.circle.fill"))
+    self.init(name: "main", badge: .branch)
   }
 }
 
-#Preview {
-  RootView(name: "main", image: .init(systemName: "line.3.horizontal.decrease.circle.fill"))
+#Preview("Branch") {
+  RootView(name: "main", badge: .branch)
 }
 
-#Preview {
-  RootView(name: "mainmainmainmainmainmain", image: .init(systemName: "line.3.horizontal.decrease.circle.fill"))
+#Preview("Long branch name") {
+  RootView(name: "mainmainmainmainmainmain", badge: .branch)
 }
 
-#Preview {
-  RootView(name: "1.1.1", image: .init(systemName: "tag.circle.fill"))
+#Preview("Tag") {
+  RootView(name: "1.1.1", badge: .tag)
 }

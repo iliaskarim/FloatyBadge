@@ -1,6 +1,20 @@
 import SwiftUI
 
 struct FloatyBadge: View {
+  enum Badge {
+    case branch, tag
+
+    fileprivate var image: Image {
+      switch self {
+      case .branch:
+          .init(systemName: "point.topleft.down.to.point.bottomright.curvepath")
+
+      case .tag:
+          .init(systemName: "tag")
+      }
+    }
+  }
+
   private enum Corner: CaseIterable {
     static func nearest(to point: CGPoint, in bounds: CGRect) -> Corner {
       allCases.min { lhs, rhs in
@@ -56,7 +70,7 @@ struct FloatyBadge: View {
 
       let base = corner.point(in: bounds)
 
-      let imageSize = 30.0
+      let imageSize = 20.0
 
       HStack {
         image
@@ -68,7 +82,7 @@ struct FloatyBadge: View {
           .frame(maxWidth: bounds.width * 0.4)
           .lineLimit(1)
           .monospaced()
-          .padding(.trailing, (badgeSize - imageSize) / 2 + 5)
+          .padding(.trailing, (badgeSize - imageSize) / 2)
           .fixedSize()
       }
       .background(.ultraThinMaterial, in: Capsule())
@@ -125,8 +139,12 @@ struct FloatyBadge: View {
 
   @State private var smoothDragOffset: CGSize = .zero
 
-  init(name: String, image: Image) {
+  init(name: String, badge: Badge) {
     self.name = name
-    self.image = image
+    self.image = badge.image
   }
+}
+
+#Preview {
+  RootView()
 }
