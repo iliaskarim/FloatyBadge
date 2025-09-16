@@ -60,12 +60,14 @@ struct FloatyBadge: View {
 
   var body: some View {
     GeometryReader { proxy in
-      let margin: CGFloat = 12
+      let hMargin: CGFloat = 12
+      let vMargin: CGFloat = 8
+
       let bounds = CGRect(
-          x: margin + badgeSize / 2,
-          y: margin + badgeSize / 2,
-          width: proxy.size.width - 2 * margin - badgeSize,
-          height: proxy.size.height - 2 * margin - badgeSize
+          x: hMargin + badgeSize / 2,
+          y: vMargin + badgeSize / 2,
+          width: proxy.size.width - 2 * hMargin - badgeSize,
+          height: proxy.size.height - 2 * vMargin - badgeSize
       )
 
       let base = corner.point(in: bounds)
