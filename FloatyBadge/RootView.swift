@@ -5,12 +5,8 @@ struct RootView: View {
   var body: some View {
     NavigationStack {
       ZStack {
-        VStack(spacing: 0) {
-          Color(uiColor: .separator)
-            .frame(height: 1)
-
-          ScrollView([.horizontal, .vertical]) {
-            Text("""
+        ScrollView([.horizontal, .vertical]) {
+          Text("""
                          GNU LESSER GENERAL PUBLIC LICENSE
                              Version 3, 29 June 2007
 
@@ -52,9 +48,8 @@ struct RootView: View {
             and utility programs needed for reproducing the Combined Work from the
             Application, but excluding the System Libraries of the Combined Work.
             """)
-            .monospaced()
-            .padding()
-          }
+          .monospaced()
+          .padding()
         }
 
         FloatyBadge(name: name, badge: badge)
